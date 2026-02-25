@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>География Африки - Учебные материалы</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e0f7fa; /* Цвет фона как на твоей основной карте */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #006064;
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 900px;
+            padding: 0 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px 20px;
+            width: 240px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00838f;
+            margin-bottom: 10px;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Изучение географии Африки</h1>
+
+    <div class="menu-container">
+        <a href="africa-history.html" class="card">
+            <div class="card-icon">🌍</div>
+            <div class="card-title">История и Метрополии</div>
+            <div class="card-desc">Даты обретения независимости и бывшие колонизаторы</div>
+        </a>
+
+        <a href="population.html" class="card">
+            <div class="card-icon">👥</div>
+            <div class="card-title">Население</div>
+            <div class="card-desc">Демографические показатели, размещение и структура</div>
+        </a>
+
+        <a href="economy.html" class="card">
+            <div class="card-icon">🏭</div>
+            <div class="card-title">Хозяйство</div>
+            <div class="card-desc">Отраслевая структура и экономическое развитие</div>
+        </a>
+    </div>
+
+</body>
+</html>
