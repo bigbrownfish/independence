@@ -9,11 +9,11 @@
         body { margin: 0; padding: 0; background-color: #e0f7fa; font-family: sans-serif; overflow: hidden; touch-action: none; }
         #map-container { width: 100vw; height: 100vh; display: block; }
         
-        .country { stroke: #333; stroke-width: 0.5px; transition: opacity 0.2s, fill 0.2s; cursor: pointer; }
+        .country { stroke: #333; stroke-width: 0.5px; transition: opacity 0.2s; cursor: pointer; }
         .country:hover { opacity: 0.7; }
         
-        .island-marker { cursor: pointer; transition: opacity 0.2s; }
-        .island-marker circle:hover { opacity: 0.7; }
+        .island-marker { cursor: pointer; transition: opacity 0.2s; stroke: #333; stroke-width: 0.5px; }
+        .island-marker:hover { opacity: 0.7; }
         
         .year-label { font-size: 8px; font-weight: bold; fill: #000; text-anchor: middle; pointer-events: none; text-shadow: 1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white; }
         
@@ -21,17 +21,17 @@
             position: absolute;
             background: rgba(255, 255, 255, 0.95);
             border: 1px solid #333;
-            padding: 10px;
+            padding: 12px;
             border-radius: 5px;
             pointer-events: none;
             opacity: 0;
             font-size: 14px;
-            box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
-            max-width: 300px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+            max-width: 350px;
             z-index: 10;
         }
-        .tooltip-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #2c3e50; }
-        .tooltip-row { margin-bottom: 3px; }
+        .tooltip-title { font-weight: bold; font-size: 16px; margin-bottom: 8px; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 4px;}
+        .tooltip-row { margin-bottom: 4px; line-height: 1.4; }
         
         #controls {
             position: absolute;
@@ -43,19 +43,34 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             z-index: 5;
         }
-        
         #controls h2 { margin: 0 0 10px 0; font-size: 16px; }
         .toggle-label { display: flex; align-items: center; margin-bottom: 5px; font-size: 14px; cursor: pointer; }
         .toggle-label input { margin-right: 8px; cursor: pointer; }
         
         .back-link { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #3498db; font-weight: bold; }
         .back-link:hover { text-decoration: underline; }
+
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 5;
+            font-size: 13px;
+        }
+        #legend h3 { margin: 0 0 10px 0; font-size: 15px; text-align: center; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
+        .legend-color { width: 18px; height: 18px; margin-right: 10px; border: 1px solid #777; border-radius: 3px; }
+        .legend-stripe { background: repeating-linear-gradient(45deg, #ffd54f, #ffd54f 4px, #e57373 4px, #e57373 8px); }
     </style>
 </head>
 <body>
 
 <div id="controls">
-    <a href="index.html" class="back-link">← На главную меню</a>
+    <a href="index.html" class="back-link">← На главное меню</a>
     <h2>Отображение стран</h2>
     <label class="toggle-label">
         <input type="checkbox" id="toggle-independent" checked> Независимые государства
@@ -65,8 +80,15 @@
     </label>
 </div>
 
+<div id="legend">
+    <h3>Условные обозначения</h3>
+    <div id="legend-items"></div>
+</div>
+
 <div id="tooltip"></div>
-<svg id="map-container"></svg>
+<svg id="map-container">
+    <defs></defs>
+</svg>
 
 <script>
     const svg = d3.select("#map-container");
@@ -74,8 +96,8 @@
     const height = window.innerHeight;
 
     const projection = d3.geoMercator()
-        .center([-75, -15]) // Центр на Латинской Америке
-        .scale(450)
+        .center([-75, -5])
+        .scale(400)
         .translate([width / 2, height / 2]);
 
     const path = d3.geoPath().projection(projection);
@@ -88,108 +110,161 @@
         });
     svg.call(zoom);
 
-    // Данные по странам (из документа)
-    const countryData = {
-        // Независимые государства
-        "MEX": { name: "Мексика", capital: "Мехико", metro: "Испания", year: "1821", status: "independent" },
-        "GTM": { name: "Гватемала", capital: "Гватемала", metro: "Испания", year: "1821", status: "independent" },
-        "BLZ": { name: "Белиз", capital: "Бельмопан", metro: "Испания, Великобритания", year: "1981", status: "independent" },
-        "SLV": { name: "Сальвадор", capital: "Сан-Сальвадор", metro: "Испания", year: "1821", status: "independent" },
-        "HND": { name: "Гондурас", capital: "Тегусигальпа", metro: "Испания", year: "1821", status: "independent" },
-        "NIC": { name: "Никарагуа", capital: "Манагуа", metro: "Испания", year: "1821", status: "independent" },
-        "CRI": { name: "Коста-Рика", capital: "Сан-Хосе", metro: "Испания", year: "1821", status: "independent" },
-        "PAN": { name: "Панама", capital: "Панама", metro: "Испания, Колумбия", year: "1903", status: "independent" },
-        "VEN": { name: "Венесуэла", capital: "Каракас", metro: "Испания", year: "1811", status: "independent" },
-        "COL": { name: "Колумбия", capital: "Богота", metro: "Испания", year: "1819", status: "independent" },
-        "ECU": { name: "Эквадор", capital: "Кито", metro: "Испания", year: "1822", status: "independent" },
-        "PER": { name: "Перу", capital: "Лима", metro: "Испания", year: "1824", status: "independent" },
-        "BOL": { name: "Боливия", capital: "Сукре", metro: "Испания", year: "1825", status: "independent" },
-        "CHL": { name: "Чили", capital: "Сантьяго", metro: "Испания", year: "1818", status: "independent" },
-        "GUY": { name: "Гайана", capital: "Джорджтаун", metro: "Нидерланды, Великобритания", year: "1966", status: "independent" },
-        "SUR": { name: "Суринам", capital: "Парамарибо", metro: "Великобритания, Нидерланды", year: "1975", status: "independent" },
-        "BRA": { name: "Бразилия", capital: "Бразилиа", metro: "Португалия", year: "1822", status: "independent" },
-        "PRY": { name: "Парагвай", capital: "Асунсьон", metro: "Испания", year: "1811", status: "independent" },
-        "URY": { name: "Уругвай", capital: "Монтевидео", metro: "Испания, Португалия, Бразилия", year: "1828", status: "independent" },
-        "ARG": { name: "Аргентина", capital: "Буэнос-Айрес", metro: "Испания", year: "1816", status: "independent" },
-        "CUB": { name: "Куба", capital: "Гавана", metro: "Испания, США", year: "1902", status: "independent" },
-        "JAM": { name: "Ямайка", capital: "Кингстон", metro: "Испания, Великобритания", year: "1962", status: "independent" },
-        "BHS": { name: "Багамы", capital: "Нассау", metro: "Испания, Великобритания", year: "1973", status: "independent" },
-        "HTI": { name: "Гаити", capital: "Порт-о-Пренс", metro: "Испания, Франция", year: "1804", status: "independent" },
-        "DOM": { name: "Доминиканская Республика", capital: "Санто-Доминго", metro: "Испания, Гаити", year: "1865", status: "independent" },
-        "KNA": { name: "Сент-Китс и Невис", capital: "Бастер", metro: "Франция, Великобритания", year: "1983", status: "independent" },
-        "ATG": { name: "Антигуа и Барбуда", capital: "Сент-Джонс", metro: "Франция, Великобритания", year: "1981", status: "independent" },
-        "DMA": { name: "Доминика", capital: "Розо", metro: "Франция, Великобритания", year: "1978", status: "independent" },
-        "LCA": { name: "Сент-Люсия", capital: "Кастри", metro: "Франция, Великобритания", year: "1979", status: "independent" },
-        "BRB": { name: "Барбадос", capital: "Бриджтаун", metro: "Великобритания", year: "1966", status: "independent" },
-        "VCT": { name: "Сент-Винсент и Гренадины", capital: "Кингстаун", metro: "Франция, Великобритания", year: "1979", status: "independent" },
-        "GRD": { name: "Гренада", capital: "Сент-Джорджес", metro: "Франция, Великобритания", year: "1974", status: "independent" },
-        "TTO": { name: "Тринидад и Тобаго", capital: "Порт-оф-Спейн", metro: "Испания, Великобритания", year: "1962", status: "independent" },
+    // Закрытие тултипа при клике по пустому месту
+    svg.on("click", () => {
+        d3.select("#tooltip").transition().duration(200).style("opacity", 0);
+    });
 
-        // Зависимые государства
-        "GUF": { name: "Гвиана (Фр.)", capital: "Кайенна", metro: "Португалия, Франция", year: "н.в.", status: "dependent" },
-        "FRA": { name: "Гвиана (Фр.)", capital: "Кайенна", metro: "Португалия, Франция", year: "н.в.", status: "dependent" }, // В случае, если Гвиана объединена с Францией
-        "PRI": { name: "Пуэрто-Рико (США)", capital: "Сан-Хуан", metro: "Испания, США", year: "н.в.", status: "dependent" },
-        "FLK": { name: "Фолклендские острова", capital: "Стэнли", metro: "Великобритания", year: "н.в.", status: "dependent" },
-        "CYM": { name: "Острова Кайман (Брит.)", capital: "Джорджтаун", metro: "Испания, Великобритания", year: "н.в.", status: "dependent" },
-        "TCA": { name: "Теркс и Кайкос", capital: "Коберн-Таун", metro: "Франция, Испания, Великобритания", year: "н.в.", status: "dependent" },
-        "VIR": { name: "Виргинские Острова (США)", capital: "Шарлотта-Амалия", metro: "Дания, США", year: "н.в.", status: "dependent" },
-        "VGB": { name: "Виргинские Острова (Брит.)", capital: "Роуд-Таун", metro: "Испания, Нидерланды, Великобритания", year: "н.в.", status: "dependent" },
-        "AIA": { name: "Ангилья", capital: "Валли", metro: "Великобритания", year: "н.в.", status: "dependent" },
-        "MSR": { name: "Монтсеррат", capital: "Плимут", metro: "Франция, Великобритания", year: "н.в.", status: "dependent" },
-        "GLP": { name: "Гваделупа", capital: "Бас-Тер", metro: "Великобритания, Франция", year: "н.в.", status: "dependent" },
-        "MTQ": { name: "Мартиника", capital: "Фор-де-Франс", metro: "Великобритания, Франция", year: "н.в.", status: "dependent" },
-        "BES": { name: "Бонэйр", capital: "Кралендейк", metro: "Испания, Великобритания, Нидерланды", year: "н.в.", status: "dependent" },
-        "CUW": { name: "Кюрасао", capital: "Виллемстад", metro: "Испания, Великобритания, Нидерланды", year: "н.в.", status: "dependent" },
-        "ABW": { name: "Аруба", capital: "Ораньестад", metro: "Испания, Великобритания, Нидерланды", year: "н.в.", status: "dependent" }
+    // Палитра метрополий
+    const powerColors = {
+        "Испания": "#ffd54f",
+        "Португалия": "#81c784",
+        "Великобритания": "#e57373",
+        "Франция": "#64b5f6",
+        "Нидерланды": "#ffb74d",
+        "США": "#ba68c8",
+        "Дания": "#a1887f",
+        "Колумбия": "#4dd0e1",
+        "Бразилия": "#dce775",
+        "Гаити": "#90a4ae"
     };
 
-    // Дополнительные координаты для мелких островов (которые могут отсутствовать в 110m geojson)
+    // Генерация легенды
+    const legendContainer = d3.select("#legend-items");
+    Object.keys(powerColors).forEach(power => {
+        const item = legendContainer.append("div").attr("class", "legend-item");
+        item.append("div").attr("class", "legend-color").style("background-color", powerColors[power]);
+        item.append("span").text(power);
+    });
+    const stripeItem = legendContainer.append("div").attr("class", "legend-item").style("margin-top", "10px");
+    stripeItem.append("div").attr("class", "legend-color legend-stripe");
+    stripeItem.append("span").style("font-size", "11px").text("Смена метрополий (штриховка)");
+
+    // Полные данные из вашего документа
+    const countryData = {
+        // Независимые
+        "MEX": { name: "Мексика", capital: "Мехико", metro: "Испания (до 1821)", year: "1821", status: "independent" },
+        "GTM": { name: "Гватемала", capital: "Гватемала", metro: "Испания (до 1821)", year: "1821", status: "independent" },
+        "BLZ": { name: "Белиз", capital: "Бельмопан", metro: "Испания (до 1798), Великобритания (до 1981)", year: "1981", status: "independent" },
+        "SLV": { name: "Сальвадор", capital: "Сан-Сальвадор", metro: "Испания (до 1821)", year: "1821", status: "independent" },
+        "HND": { name: "Гондурас", capital: "Тегусигальпа", metro: "Испания (до 1821)", year: "1821", status: "independent" },
+        "NIC": { name: "Никарагуа", capital: "Манагуа", metro: "Испания (до 1821)", year: "1821", status: "independent" },
+        "CRI": { name: "Коста-Рика", capital: "Сан-Хосе", metro: "Испания (до 1821)", year: "1821", status: "independent" },
+        "PAN": { name: "Панама", capital: "Панама", metro: "Испания (до 1821), Колумбия (до 1903)", year: "1903", status: "independent" },
+        "VEN": { name: "Венесуэла", capital: "Каракас", metro: "Испания (до 1811)", year: "1811", status: "independent" },
+        "COL": { name: "Колумбия", capital: "Богота", metro: "Испания (до 1819)", year: "1819", status: "independent" },
+        "ECU": { name: "Эквадор", capital: "Кито", metro: "Испания (до 1822)", year: "1822", status: "independent" },
+        "PER": { name: "Перу", capital: "Лима", metro: "Испания (до 1824)", year: "1824", status: "independent" },
+        "BOL": { name: "Боливия", capital: "Сукре", metro: "Испания (до 1825)", year: "1825", status: "independent" },
+        "CHL": { name: "Чили", capital: "Сантьяго", metro: "Испания (до 1818)", year: "1818", status: "independent" },
+        "GUY": { name: "Гайана", capital: "Джорджтаун", metro: "Нидерланды (до 1814), Великобритания (до 1966)", year: "1966", status: "independent" },
+        "SUR": { name: "Суринам", capital: "Парамарибо", metro: "Великобритания (до 1814), Нидерланды (до 1975)", year: "1975", status: "independent" },
+        "BRA": { name: "Бразилия", capital: "Бразилиа", metro: "Португалия (до 1822)", year: "1822", status: "independent" },
+        "PRY": { name: "Парагвай", capital: "Асунсьон", metro: "Испания (до 1811)", year: "1811", status: "independent" },
+        "URY": { name: "Уругвай", capital: "Монтевидео", metro: "Испания (до 1814), Португалия (до 1824), Бразилия (до 1828)", year: "1828", status: "independent" },
+        "ARG": { name: "Аргентина", capital: "Буэнос-Айрес", metro: "Испания (до 1816)", year: "1816", status: "independent" },
+        "CUB": { name: "Куба", capital: "Гавана", metro: "Испания (до 1898), США (до 1902)", year: "1902", status: "independent" },
+        "JAM": { name: "Ямайка", capital: "Кингстон", metro: "Испания (до 1655), Великобритания (до 1962)", year: "1962", status: "independent" },
+        "BHS": { name: "Багамы", capital: "Нассау", metro: "Испания (до 1783), Великобритания (до 1973)", year: "1973", status: "independent" },
+        "HTI": { name: "Гаити", capital: "Порт-о-Пренс", metro: "Испания (до 1697), Франция (до 1804)", year: "1804", status: "independent" },
+        "DOM": { name: "Доминиканская Республика", capital: "Санто-Доминго", metro: "Испания (до 1821), Гаити (до 1844), Испания (до 1865)", year: "1865", status: "independent" },
+        "KNA": { name: "Сент-Китс и Невис", capital: "Бастер", metro: "Франция (до 1783), Великобритания (до 1983)", year: "1983", status: "independent" },
+        "ATG": { name: "Антигуа и Барбуда", capital: "Сент-Джонс", metro: "Франция (до 1666), Великобритания (до 1981)", year: "1981", status: "independent" },
+        "DMA": { name: "Доминика", capital: "Розо", metro: "Франция (до 1763), Великобритания (до 1978)", year: "1978", status: "independent" },
+        "LCA": { name: "Сент-Люсия", capital: "Кастри", metro: "Франция (до 1814), Великобритания (до 1979)", year: "1979", status: "independent" },
+        "BRB": { name: "Барбадос", capital: "Бриджтаун", metro: "Великобритания (до 1966)", year: "1966", status: "independent" },
+        "VCT": { name: "Сент-Винсент и Гренадины", capital: "Кингстаун", metro: "Франция (до 1783), Великобритания (до 1979)", year: "1979", status: "independent" },
+        "GRD": { name: "Гренада", capital: "Сент-Джорджес", metro: "Франция (до 1763), Великобритания (до 1974)", year: "1974", status: "independent" },
+        "TTO": { name: "Тринидад и Тобаго", capital: "Порт-оф-Спейн", metro: "Испания (до 1797), Великобритания (до 1962)", year: "1962", status: "independent" },
+
+        // Зависимые
+        "GUF": { name: "Гвиана (Фр.)", capital: "Кайенна", metro: "Португалия (до 1817), Франция (с 1817 по н.в.)", status: "dependent" },
+        "CYM": { name: "Острова Кайман", capital: "Джорджтаун", metro: "Испания (до 1670), Великобритания (с 1670 по н.в.)", status: "dependent" },
+        "TCA": { name: "Теркс и Кайкос", capital: "Коберн-Таун", metro: "Франция (до 1764), Испания (до 1783), Великобритания (с 1783 по н.в.)", status: "dependent" },
+        "PRI": { name: "Пуэрто-Рико", capital: "Сан-Хуан", metro: "Испания (до 1898), США (с 1898 по н.в.)", status: "dependent" },
+        "VIR": { name: "Виргинские Острова (США)", capital: "Шарлотта-Амалия", metro: "Дания (до 1917), США (с 1917 по н.в.)", status: "dependent" },
+        "VGB": { name: "Виргинские Острова (Брит.)", capital: "Роуд-Таун", metro: "Испания (до 1648), Нидерланды (до 1672), Великобритания (с 1672 по н.в.)", status: "dependent" },
+        "AIA": { name: "Ангилья", capital: "Валли", metro: "Великобритания (с 1650 по н.в.)", status: "dependent" },
+        "MSR": { name: "Монтсеррат", capital: "Плимут", metro: "Франция (до 1783), Великобритания (с 1783 по н.в.)", status: "dependent" },
+        "GLP": { name: "Гваделупа", capital: "Бас-Тер", metro: "Великобритания (до 1816), Франция (с 1816 по н.в.)", status: "dependent" },
+        "MTQ": { name: "Мартиника", capital: "Фор-де-Франс", metro: "Великобритания (до 1814), Франция (с 1814 по н.в.)", status: "dependent" },
+        "BES": { name: "Бонэйр", capital: "Кралендейк", metro: "Испания (до 1636), Великобритания (до 1814), Нидерланды (с 1814 по н.в.)", status: "dependent" },
+        "CUW": { name: "Кюрасао", capital: "Виллемстад", metro: "Испания (до 1634), Великобритания (до 1815), Нидерланды (с 1815 по н.в.)", status: "dependent" },
+        "ABW": { name: "Аруба", capital: "Ораньестад", metro: "Испания (до 1636), Великобритания (до 1816), Нидерланды (с 1816 по н.в.)", status: "dependent" }
+    };
+
     const islandNations = [
-        { id: "KNA", coords: [-62.782998, 17.357822] },
-        { id: "ATG", coords: [-61.796428, 17.060816] },
-        { id: "DMA", coords: [-61.370976, 15.414999] },
-        { id: "LCA", coords: [-60.978893, 13.909444] },
-        { id: "BRB", coords: [-59.543198, 13.193887] },
-        { id: "VCT", coords: [-61.224816, 13.252818] },
-        { id: "GRD", coords: [-61.679, 12.1165] },
-        { id: "TTO", coords: [-61.222503, 10.691803] },
-        { id: "CYM", coords: [-80.566956, 19.3133] },
-        { id: "TCA", coords: [-71.797928, 21.694025] },
-        { id: "VIR", coords: [-64.896335, 18.335765] },
-        { id: "VGB", coords: [-64.639968, 18.420695] },
-        { id: "AIA", coords: [-63.068615, 18.220554] },
-        { id: "MSR", coords: [-62.187366, 16.742498] },
-        { id: "GLP", coords: [-61.551, 16.265] },
-        { id: "MTQ", coords: [-61.024174, 14.641528] },
-        { id: "BES", coords: [-68.2655, 12.1444] },
-        { id: "CUW", coords: [-68.99, 12.1696] },
+        { id: "KNA", coords: [-62.782998, 17.357822] }, { id: "ATG", coords: [-61.796428, 17.060816] },
+        { id: "DMA", coords: [-61.370976, 15.414999] }, { id: "LCA", coords: [-60.978893, 13.909444] },
+        { id: "BRB", coords: [-59.543198, 13.193887] }, { id: "VCT", coords: [-61.224816, 13.252818] },
+        { id: "GRD", coords: [-61.679, 12.1165] }, { id: "TTO", coords: [-61.222503, 10.691803] },
+        { id: "CYM", coords: [-80.566956, 19.3133] }, { id: "TCA", coords: [-71.797928, 21.694025] },
+        { id: "VIR", coords: [-64.896335, 18.335765] }, { id: "VGB", coords: [-64.639968, 18.420695] },
+        { id: "AIA", coords: [-63.068615, 18.220554] }, { id: "MSR", coords: [-62.187366, 16.742498] },
+        { id: "GLP", coords: [-61.551, 16.265] }, { id: "MTQ", coords: [-61.024174, 14.641528] },
+        { id: "BES", coords: [-68.2655, 12.1444] }, { id: "CUW", coords: [-68.99, 12.1696] },
         { id: "ABW", coords: [-69.9683, 12.5211] }
     ];
 
-    function getColor(metro) {
-        if (!metro) return "#ccc";
-        if (metro.includes("Испания")) return "#ffd54f"; // Желтый
-        if (metro.includes("Португалия")) return "#81c784"; // Зеленый
-        if (metro.includes("Великобритания")) return "#e57373"; // Красный
-        if (metro.includes("Франция")) return "#64b5f6"; // Синий
-        if (metro.includes("Нидерланды")) return "#ffb74d"; // Оранжевый
-        if (metro.includes("США")) return "#ba68c8"; // Фиолетовый
-        return "#aed581";
+    // Функция для определения стиля заливки (сплошной цвет или штриховка)
+    function getFillStyle(metro) {
+        if (!metro) return "#eaeaea";
+        const powers = Object.keys(powerColors).filter(p => metro.includes(p));
+        
+        if (powers.length === 0) return "#eaeaea";
+        if (powers.length === 1) return powerColors[powers[0]];
+        
+        // Создание паттерна для нескольких метрополий
+        const patternId = `pattern-${powers.join('-')}`;
+        const defs = svg.select("defs");
+        
+        if (defs.select(`#${patternId}`).empty()) {
+            const pattern = defs.append("pattern")
+                .attr("id", patternId)
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("patternUnits", "userSpaceOnUse")
+                .attr("patternTransform", "rotate(45)");
+            
+            // Фон (первая метрополия)
+            pattern.append("rect")
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", powerColors[powers[0]]);
+            
+            // Полосы для остальных
+            const stripeWidth = 10 / powers.length;
+            for (let i = 1; i < powers.length; i++) {
+                pattern.append("rect")
+                    .attr("x", i * stripeWidth)
+                    .attr("width", stripeWidth)
+                    .attr("height", 10)
+                    .attr("fill", powerColors[powers[i]]);
+            }
+        }
+        return `url(#${patternId})`;
     }
 
     const tooltip = d3.select("#tooltip");
 
     function showTooltip(event, data) {
-        tooltip.transition().duration(200).style("opacity", 1);
-        tooltip.html(`
+        let html = `
             <div class="tooltip-title">${data.name}</div>
-            <div class="tooltip-row"><b>Столица:</b> ${data.capital}</div>
-            <div class="tooltip-row"><b>Метрополия:</b> ${data.metro}</div>
-            <div class="tooltip-row"><b>Год независимости:</b> ${data.year}</div>
-            <div class="tooltip-row"><b>Статус:</b> ${data.status === 'independent' ? 'Независимое государство' : 'Зависимая территория'}</div>
-        `)
-        .style("left", (event.pageX + 15) + "px")
-        .style("top", (event.pageY - 28) + "px");
+            <div class="tooltip-row"><b>Административный центр:</b> ${data.capital}</div>
+            <div class="tooltip-row"><b>Метрополии:</b><br>${data.metro}</div>
+        `;
+        
+        // Показываем год независимости только если страна независимая
+        if (data.status === 'independent') {
+            html += `<div class="tooltip-row" style="margin-top: 5px;"><b>Год независимости:</b> ${data.year}</div>`;
+        }
+        
+        html += `<div class="tooltip-row" style="margin-top: 5px;"><b>Статус:</b> ${data.status === 'independent' ? 'Независимое государство' : 'Зависимая территория'}</div>`;
+
+        tooltip.html(html)
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 28) + "px")
+            .transition().duration(200).style("opacity", 1);
     }
 
     d3.json("ne_110m_admin_0_countries.geojson").then(world => {
@@ -201,21 +276,12 @@
             .attr("d", path)
             .attr("fill", d => {
                 const geoId = d.properties.ADM0_A3 || d.properties.GU_A3;
-                return countryData[geoId] ? getColor(countryData[geoId].metro) : "#eaeaea";
+                return countryData[geoId] ? getFillStyle(countryData[geoId].metro) : "#eaeaea";
             })
-            .on("mouseover", function(event, d) {
+            .on("click", function(event, d) {
+                event.stopPropagation(); // Предотвращаем срабатывание клика по svg
                 const geoId = d.properties.ADM0_A3 || d.properties.GU_A3;
-                if(countryData[geoId]) {
-                    d3.select(this).style("stroke-width", "1.5px");
-                    showTooltip(event, countryData[geoId]);
-                }
-            })
-            .on("mousemove", function(event) {
-                tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
-            })
-            .on("mouseout", function() {
-                d3.select(this).style("stroke-width", "0.5px");
-                tooltip.transition().duration(500).style("opacity", 0);
+                if(countryData[geoId]) showTooltip(event, countryData[geoId]);
             });
 
         // Добавление годов на карту
@@ -224,43 +290,37 @@
             .enter().append("text")
             .attr("class", "year-label")
             .attr("transform", function(d) {
-                const geoId = d.properties.ADM0_A3 || d.properties.GU_A3;
-                if (geoId === "FRA") { // Специальное позиционирование для Французской Гвианы, если она объединена с Францией
-                    const guiCoords = projection([-53.1258, 3.9339]);
-                    return `translate(${guiCoords[0]}, ${guiCoords[1]})`;
-                }
                 const centroid = path.centroid(d);
                 return (!isNaN(centroid[0]) && !isNaN(centroid[1])) ? `translate(${centroid[0]}, ${centroid[1]})` : "translate(-1000,-1000)";
             })
             .text(d => {
                 const geoId = d.properties.ADM0_A3 || d.properties.GU_A3;
-                return countryData[geoId] ? countryData[geoId].year : "";
+                return (countryData[geoId] && countryData[geoId].status === 'independent') ? countryData[geoId].year : "";
             });
 
-        // Добавление мелких островов (маркеры)
+        // Мелкие островные государства (маркеры)
         const islands = mapGroup.selectAll(".island-group")
             .data(islandNations)
             .enter().append("g")
             .attr("class", "island-marker")
-            .attr("transform", d => `translate(${projection(d.coords)[0]}, ${projection(d.coords)[1]})`);
+            .attr("transform", d => `translate(${projection(d.coords)[0]}, ${projection(d.coords)[1]})`)
+            .on("click", function(event, d) {
+                event.stopPropagation();
+                if(countryData[d.id]) showTooltip(event, countryData[d.id]);
+            });
 
         islands.append("circle")
-            .attr("r", 4)
-            .attr("fill", d => getColor(countryData[d.id].metro))
-            .attr("stroke", "#333")
-            .attr("stroke-width", "0.5px")
-            .on("mouseover", function(event, d) { showTooltip(event, countryData[d.id]); })
-            .on("mouseout", function() { tooltip.transition().duration(500).style("opacity", 0); });
+            .attr("r", 5)
+            .attr("fill", d => countryData[d.id] ? getFillStyle(countryData[d.id].metro) : "#eaeaea");
 
         islands.append("text")
             .attr("class", "year-label")
             .attr("y", -8)
-            .text(d => countryData[d.id].year);
+            .text(d => (countryData[d.id] && countryData[d.id].status === 'independent') ? countryData[d.id].year : "");
 
         updateVisibility();
     });
 
-    // Логика фильтрации (включение/выключение групп стран)
     function updateVisibility() {
         const showIndep = d3.select("#toggle-independent").property("checked");
         const showDep = d3.select("#toggle-dependent").property("checked");
@@ -276,13 +336,12 @@
         mapGroup.selectAll(".country")
             .style("display", d => {
                 const geoId = d.properties.ADM0_A3 || d.properties.GU_A3;
-                if (!countryData[geoId]) return "block"; // Оставляем контуры других мировых стран для фона
+                if (!countryData[geoId]) return "block"; 
                 return isVisible(geoId) ? "block" : "none";
             });
             
         mapGroup.selectAll(".year-label")
             .style("display", d => {
-                // Обрабатываем как полигоны, так и островные маркеры
                 const geoId = d.id || d.properties?.ADM0_A3 || d.properties?.GU_A3;
                 if (!countryData[geoId]) return "none";
                 return isVisible(geoId) ? "block" : "none";
