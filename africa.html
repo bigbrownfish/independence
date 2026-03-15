@@ -5,105 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Африка | Исторический атлас</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-color: #fcfbf9;
-            --nav-bg: #ffffff;
-            --text-main: #2c3e50;
-            --border-color: #e2dfd6;
+            --bg-color: #fcfbf9; --nav-bg: #ffffff;
+            --text-main: #2c3e50; --border-color: #e2dfd6;
+            --quiz-primary: #3498db; --quiz-success: #2ecc71; --quiz-danger: #e74c3c;
         }
 
         body { 
-            margin: 0; padding: 0; 
-            background-color: var(--bg-color); 
-            font-family: 'Inter', sans-serif; 
-            overflow: hidden; 
-            touch-action: none;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            margin: 0; padding: 0; background-color: var(--bg-color); 
+            font-family: 'Inter', sans-serif; overflow: hidden; 
+            touch-action: none; display: flex; flex-direction: column; height: 100vh;
         }
 
-        /* Верхняя панель навигации */
         #top-nav {
-            background-color: var(--nav-bg);
-            border-bottom: 1px solid var(--border-color);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            z-index: 20;
+            background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 20;
         }
 
         .back-btn {
-            text-decoration: none;
-            color: var(--text-main);
-            font-weight: 500;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 6px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            transition: background 0.2s;
+            text-decoration: none; color: var(--text-main); font-weight: 500; font-size: 14px;
+            display: flex; align-items: center; gap: 5px; padding: 6px 12px;
+            border: 1px solid var(--border-color); border-radius: 4px; transition: background 0.2s;
         }
         .back-btn:hover { background: var(--bg-color); }
 
         .mode-selector {
-            display: flex;
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            overflow: hidden;
+            display: flex; background: var(--bg-color); border: 1px solid var(--border-color);
+            border-radius: 6px; overflow: hidden;
         }
         .mode-btn {
-            border: none;
-            background: none;
-            padding: 8px 16px;
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            cursor: pointer;
-            color: #5c6b7a;
-            transition: all 0.2s;
+            border: none; background: none; padding: 8px 16px; font-family: 'Inter', sans-serif;
+            font-size: 13px; cursor: pointer; color: #5c6b7a; transition: all 0.2s;
         }
-        .mode-btn.active {
-            background: var(--text-main);
-            color: white;
-            font-weight: 500;
-        }
+        .mode-btn.active { background: var(--text-main); color: white; font-weight: 500; }
+        .mode-btn.quiz-mode-btn.active { background: var(--quiz-primary); } /* Цвет кнопки теста */
 
-        /* Контейнер карты */
         #map-container { flex-grow: 1; width: 100vw; display: block; background-color: #eaf6f6; }
         
-        .country { stroke: #333; stroke-width: 0.5px; transition: opacity 0.2s, fill 0.3s; cursor: pointer; }
+        .country { stroke: #333; stroke-width: 0.5px; transition: opacity 0.2s, fill 0.3s, stroke-width 0.2s; cursor: pointer; }
         .country:hover { opacity: 0.7; }
-        .island-marker { stroke: #333; stroke-width: 1px; cursor: pointer; transition: opacity 0.2s, fill 0.3s; }
+        .island-marker { stroke: #111; stroke-width: 0.8px; cursor: pointer; transition: opacity 0.2s, fill 0.3s; }
         .island-marker:hover { opacity: 0.7; }
         
         .map-label { font-size: 8px; font-weight: bold; fill: #111; text-anchor: middle; pointer-events: none; text-shadow: 1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8); }
-        .island-label { font-size: 8px; font-weight: bold; fill: #111; text-anchor: start; pointer-events: none; text-shadow: 1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8); }
+        .island-label { font-size: 8px; font-weight: bold; fill: #111; text-anchor: start; pointer-events: none; text-shadow: 1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8); opacity: 0; transition: opacity 0.3s; }
         
         #tooltip {
             position: absolute; background: rgba(255, 255, 255, 0.95);
             border: 1px solid var(--border-color); padding: 12px; border-radius: 6px;
             pointer-events: none; opacity: 0; font-size: 13px;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.1); max-width: 250px; z-index: 10;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1); max-width: 320px; z-index: 10;
         }
         .tooltip-title { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 16px; margin-bottom: 8px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;}
         .tooltip-row { margin-bottom: 4px; line-height: 1.3; }
 
-        /* Легенда */
         #legend {
             position: absolute; bottom: 20px; left: 10px;
             background: rgba(255, 255, 255, 0.95); border: 1px solid var(--border-color);
             border-radius: 6px; font-size: 12px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
             z-index: 5; width: 220px;
         }
-        
         #legend-header {
             font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px;
             text-align: center; background: var(--nav-bg);
@@ -112,23 +77,42 @@
             cursor: grab; touch-action: none;
         }
         #legend-header:active { cursor: grabbing; }
-        
         #legend-content { padding: 10px; max-height: 40vh; overflow-y: auto; transition: max-height 0.3s; }
         .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
         .legend-color { width: 14px; height: 14px; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; flex-shrink: 0; }
         .legend-pattern { width: 14px; height: 14px; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; flex-shrink: 0; background: repeating-linear-gradient(45deg, #ccc, #ccc 3px, #fff 3px, #fff 6px); }
-
-        /* Сворачивание легенды */
         #legend.collapsed #legend-content { max-height: 0; padding: 0 10px; overflow: hidden; border: none; }
-        .toggle-icon { transition: transform 0.3s; }
-        #legend.collapsed .toggle-icon { transform: rotate(180deg); }
 
-        /* Адаптив для мобильных */
+        /* --- СТИЛИ ПАНЕЛИ ТЕСТИРОВАНИЯ --- */
+        #quiz-panel {
+            position: absolute; top: 70px; right: 20px; background: rgba(255, 255, 255, 0.98);
+            border: 2px solid var(--quiz-primary); border-radius: 8px; padding: 15px; width: 300px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 15; display: none;
+            max-height: 80vh; overflow-y: auto; font-size: 14px;
+        }
+        #quiz-header { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 18px; color: var(--quiz-primary); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .quiz-title { font-weight: 600; font-size: 16px; margin-bottom: 10px; }
+        .quiz-error { color: var(--quiz-danger); font-size: 12px; margin-bottom: 10px; font-weight: 500; min-height: 15px; }
+        .quiz-form-group { margin-bottom: 12px; }
+        .quiz-label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: 500; }
+        .quiz-input, .quiz-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: 'Inter', sans-serif; box-sizing: border-box; }
+        .quiz-metro-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 5px; }
+        .quiz-metro-item span { font-size: 13px; font-weight: 500; }
+        .quiz-metro-year { width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .quiz-remove-btn { background: none; border: none; color: var(--quiz-danger); cursor: pointer; font-size: 16px; font-weight: bold; padding: 0 5px; }
+        .quiz-btn { width: 100%; padding: 10px; margin-top: 10px; background: var(--quiz-primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        .quiz-btn:hover { background: #2980b9; }
+        .quiz-btn-next { background: var(--quiz-success); }
+        .quiz-btn-next:hover { background: #27ae60; }
+        .quiz-result-box { padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 13px; display: none; }
+        .quiz-result-box.correct { background-color: #e8f8f5; border: 1px solid #2ecc71; color: #27ae60; }
+        .quiz-result-box.incorrect { background-color: #fdedec; border: 1px solid #e74c3c; color: #c0392b; }
+
         @media (max-width: 600px) {
             #top-nav { padding: 8px 10px; flex-direction: column; gap: 10px; }
             .mode-btn { padding: 6px 12px; font-size: 12px; }
             #legend { bottom: 0; left: 0 !important; top: auto !important; width: 100%; border-radius: 12px 12px 0 0; border-left: none; border-right: none; border-bottom: none; }
-            #legend-header { border-radius: 12px 12px 0 0; padding: 12px; }
+            #quiz-panel { top: auto; bottom: 0; right: 0; width: 100%; border-radius: 12px 12px 0 0; border-left: none; border-right: none; border-bottom: none; box-sizing: border-box; }
         }
     </style>
 </head>
@@ -139,6 +123,7 @@
     <div class="mode-selector">
         <button class="mode-btn active" data-mode="independence">Независимость</button>
         <button class="mode-btn" data-mode="subregions">Субрегионы</button>
+        <button class="mode-btn quiz-mode-btn" data-mode="quiz">Тест</button>
     </div>
 </nav>
 
@@ -149,10 +134,41 @@
     <div id="legend-content"><div id="legend-items"></div></div>
 </div>
 
+<div id="quiz-panel">
+    <div id="quiz-header">Режим тестирования</div>
+    <div id="quiz-find-section">
+        <div class="quiz-title">Где находится: <br><span id="quiz-target-name" style="color: var(--quiz-primary); font-size: 20px;"></span>?</div>
+        <div class="quiz-error" id="quiz-error-msg"></div>
+        <div style="font-size: 12px; color: #7f8c8d;">Нажмите на нужную страну на карте.</div>
+    </div>
+
+    <div id="quiz-answer-section" style="display: none;">
+        <div class="quiz-title">Данные: <span id="quiz-active-name" style="color: var(--quiz-primary);"></span></div>
+        
+        <div class="quiz-form-group">
+            <label class="quiz-label">Год независимости:</label>
+            <input type="text" id="quiz-year-input" class="quiz-input" placeholder="Например: 1960">
+        </div>
+
+        <div class="quiz-form-group">
+            <label class="quiz-label">Бывшие метрополии:</label>
+            <div id="quiz-selected-metros"></div>
+            
+            <select id="quiz-metro-select" class="quiz-select" style="margin-top: 5px;">
+                <option value="">+ Добавить метрополию...</option>
+                </select>
+        </div>
+
+        <button id="quiz-check-btn" class="quiz-btn">Проверить</button>
+        <div id="quiz-result" class="quiz-result-box"></div>
+        <button id="quiz-next-btn" class="quiz-btn quiz-btn-next" style="display: none;">Следующая страна</button>
+    </div>
+</div>
+
 <svg id="map-container"></svg>
 
 <script>
-// --- ДАННЫЕ И ЦВЕТА ---
+// --- БАЗА ДАННЫХ И ЦВЕТА ---
 const metropoleColors = {
     "Франция": "#4287f5", "Великобритания": "#f54242", "Испания": "#f5d142",
     "Италия": "#9e42f5", "Португалия": "#42f563", "Германия": "#f58742",
@@ -230,73 +246,228 @@ const islandNations = [
 
 let currentMode = "independence";
 
-// --- ЛОГИКА ЛЕГЕНДЫ И КНОПОК ---
-const legendHeader = document.getElementById('legend-header');
-const legendEl = document.getElementById('legend');
-const modeBtns = document.querySelectorAll('.mode-btn');
+// --- ЛОГИКА ТЕСТИРОВАНИЯ (QUIZ) ---
+let quizCountriesList = [];
+let currentQuizIndex = 0;
+let quizPhase = "off"; // off | find | answer | result
+let currentQuizTargetId = null;
+let selectedMetros = {}; // { "Франция": "1960" }
 
+const quizPanel = document.getElementById('quiz-panel');
+const legendEl = document.getElementById('legend');
+
+// Инициализация выпадающего списка метрополий
+const metroSelect = document.getElementById('quiz-metro-select');
+Object.keys(metropoleColors).forEach(metro => {
+    let opt = document.createElement('option');
+    opt.value = metro; opt.textContent = metro;
+    metroSelect.appendChild(opt);
+});
+
+metroSelect.addEventListener('change', function() {
+    const val = this.value;
+    if (val && !selectedMetros[val]) {
+        selectedMetros[val] = "";
+        renderSelectedMetros();
+    }
+    this.value = ""; // сброс селекта
+});
+
+function renderSelectedMetros() {
+    const container = document.getElementById('quiz-selected-metros');
+    container.innerHTML = "";
+    Object.keys(selectedMetros).forEach(metro => {
+        const row = document.createElement('div');
+        row.className = "quiz-metro-item";
+        row.innerHTML = `
+            <span>${metro}</span>
+            <div>
+                <span style="font-size: 11px;">до: </span>
+                <input type="text" class="quiz-metro-year" data-metro="${metro}" placeholder="Год" value="${selectedMetros[metro]}">
+                <button class="quiz-remove-btn" onclick="removeMetro('${metro}')">×</button>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+    
+    // Привязываем обновление значений
+    document.querySelectorAll('.quiz-metro-year').forEach(input => {
+        input.addEventListener('input', (e) => {
+            selectedMetros[e.target.dataset.metro] = e.target.value;
+        });
+    });
+}
+
+window.removeMetro = function(metro) {
+    delete selectedMetros[metro];
+    renderSelectedMetros();
+}
+
+function startQuiz() {
+    const allIds = [...Object.keys(countryData), ...islandNations.map(i => i.id)];
+    quizCountriesList = allIds.sort(() => Math.random() - 0.5); // Перемешиваем
+    currentQuizIndex = 0;
+    legendEl.style.display = 'none';
+    quizPanel.style.display = 'block';
+    nextQuizQuestion();
+}
+
+function getCountryNameById(id) {
+    if (countryData[id]) return countryData[id].name;
+    let island = islandNations.find(i => i.id === id);
+    if (island) return island.info.name;
+    return "";
+}
+
+function nextQuizQuestion() {
+    if (currentQuizIndex >= quizCountriesList.length) {
+        document.getElementById('quiz-find-section').innerHTML = "<div class="quiz-title">Тест завершен! Вы прошли все страны.</div>";
+        document.getElementById('quiz-answer-section').style.display = 'none';
+        return;
+    }
+    
+    currentTargetId = quizCountriesList[currentQuizIndex];
+    quizPhase = 'find';
+    selectedMetros = {};
+    
+    document.getElementById('quiz-target-name').textContent = getCountryNameById(currentTargetId);
+    document.getElementById('quiz-error-msg').textContent = "";
+    document.getElementById('quiz-find-section').style.display = 'block';
+    document.getElementById('quiz-answer-section').style.display = 'none';
+    document.getElementById('quiz-result').style.display = 'none';
+    document.getElementById('quiz-next-btn').style.display = 'none';
+    document.getElementById('quiz-check-btn').style.display = 'block';
+    document.getElementById('quiz-year-input').value = "";
+    
+    renderSelectedMetros();
+    updateMapVisuals(); // Обновит карту (сделает серой)
+}
+
+function handleQuizMapClick(geoId) {
+    if (quizPhase !== 'find') return;
+    
+    if (geoId === currentTargetId) {
+        // Нашли правильную страну! Переходим к ответу
+        quizPhase = 'answer';
+        document.getElementById('quiz-find-section').style.display = 'none';
+        document.getElementById('quiz-active-name').textContent = getCountryNameById(currentTargetId);
+        document.getElementById('quiz-answer-section').style.display = 'block';
+        updateMapVisuals(); // Подсветит найденную страну
+    } else {
+        // Ошибка
+        const clickedName = getCountryNameById(geoId) || "Неизвестная территория";
+        document.getElementById('quiz-error-msg').textContent = `Неверно! Это ${clickedName}. Ищите ${getCountryNameById(currentTargetId)}!`;
+    }
+}
+
+document.getElementById('quiz-check-btn').addEventListener('click', () => {
+    const targetData = countryData[currentTargetId] || islandNations.find(i => i.id === currentTargetId).info;
+    const inputYear = document.getElementById('quiz-year-input').value.trim();
+    
+    let errors = [];
+    
+    // Проверка года независимости (гибкая, по подстроке, чтобы засчитывать 1960 при "1960/61" и тд)
+    if (!targetData.year.includes(inputYear) || inputYear === "") {
+        errors.push(`<b>Год независимости:</b> неверно. Правильно: ${targetData.year}`);
+    }
+    
+    // Проверка метрополий
+    const targetMetros = targetData.metro;
+    const selectedMetroKeys = Object.keys(selectedMetros);
+    
+    // Проверяем, не забыли ли метрополию и не добавили ли лишнюю
+    let missingMetros = targetMetros.filter(m => !selectedMetroKeys.includes(m));
+    let extraMetros = selectedMetroKeys.filter(m => !targetMetros.includes(m));
+    
+    if (missingMetros.length > 0) errors.push(`<b>Пропущены метрополии:</b> ${missingMetros.join(', ')}`);
+    if (extraMetros.length > 0) errors.push(`<b>Лишние метрополии:</b> ${extraMetros.join(', ')}`);
+    
+    // Проверка дат метрополий (умная проверка, ищет введенный год в строке metro_text)
+    selectedMetroKeys.forEach(m => {
+        if (targetMetros.includes(m)) {
+            const inputDate = selectedMetros[m].trim();
+            // Если текст реальной истории не содержит введенный год
+            if (inputDate !== "" && !targetData.metro_text.includes(inputDate)) {
+                 errors.push(`<b>Дата для ${m}:</b> неверно.`);
+            } else if (inputDate === "") {
+                 errors.push(`<b>Укажите год для ${m}</b>`);
+            }
+        }
+    });
+
+    const resultBox = document.getElementById('quiz-result');
+    resultBox.style.display = 'block';
+    
+    if (errors.length === 0) {
+        resultBox.className = "quiz-result-box correct";
+        resultBox.innerHTML = `<strong>Идеально!</strong><br>Полная справка: ${targetData.metro_text}`;
+    } else {
+        resultBox.className = "quiz-result-box incorrect";
+        resultBox.innerHTML = `<strong>Есть ошибки:</strong><br>${errors.join('<br>')}<br><br><em>Справка: ${targetData.metro_text}</em>`;
+    }
+    
+    document.getElementById('quiz-check-btn').style.display = 'none';
+    document.getElementById('quiz-next-btn').style.display = 'block';
+    quizPhase = 'result';
+    updateMapVisuals(); // Включит реальные цвета
+});
+
+document.getElementById('quiz-next-btn').addEventListener('click', () => {
+    currentQuizIndex++;
+    nextQuizQuestion();
+});
+
+
+// --- ОБЩАЯ ЛОГИКА КНОПОК И ЛЕГЕНДЫ ---
+const modeBtns = document.querySelectorAll('.mode-btn');
 modeBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
         modeBtns.forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         currentMode = e.target.dataset.mode;
-        updateMapVisuals();
+        
+        if (currentMode === 'quiz') {
+            startQuiz();
+        } else {
+            quizPhase = 'off';
+            quizPanel.style.display = 'none';
+            legendEl.style.display = 'block';
+            updateMapVisuals();
+        }
     });
 });
 
-let isDragging = false;
-let isMoved = false;
-let startX, startY, initialLeft, initialTop;
+const legendHeader = document.getElementById('legend-header');
+let isDragging = false; let isMoved = false; let startX, startY, initialLeft, initialTop;
 
 legendHeader.addEventListener("pointerdown", (e) => {
-    if (window.innerWidth <= 600) return; // На мобильных перетаскивания нет
-    isDragging = true;
-    isMoved = false; 
-    startX = e.clientX;
-    startY = e.clientY;
-    
+    if (window.innerWidth <= 600) return; 
+    isDragging = true; isMoved = false; startX = e.clientX; startY = e.clientY;
     const rect = legendEl.getBoundingClientRect();
-    legendEl.style.bottom = "auto";
-    legendEl.style.right = "auto";
-    initialLeft = rect.left;
-    initialTop = rect.top;
-    
-    legendEl.style.left = initialLeft + "px";
-    legendEl.style.top = initialTop + "px";
+    legendEl.style.bottom = "auto"; legendEl.style.right = "auto";
+    initialLeft = rect.left; initialTop = rect.top;
+    legendEl.style.left = initialLeft + "px"; legendEl.style.top = initialTop + "px";
     legendHeader.setPointerCapture(e.pointerId);
 });
 
 legendHeader.addEventListener("pointermove", (e) => {
     if (!isDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    
+    const dx = e.clientX - startX; const dy = e.clientY - startY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isMoved = true;
-    
     if (isMoved) {
-        let newX = initialLeft + dx;
-        let newY = initialTop + dy;
-        
-        newX = Math.max(0, Math.min(window.innerWidth - legendEl.offsetWidth, newX));
-        newY = Math.max(document.getElementById('top-nav').offsetHeight, Math.min(window.innerHeight - legendEl.offsetHeight, newY));
-
-        legendEl.style.left = newX + "px";
-        legendEl.style.top = newY + "px";
+        let newX = Math.max(0, Math.min(window.innerWidth - legendEl.offsetWidth, initialLeft + dx));
+        let newY = Math.max(document.getElementById('top-nav').offsetHeight, Math.min(window.innerHeight - legendEl.offsetHeight, initialTop + dy));
+        legendEl.style.left = newX + "px"; legendEl.style.top = newY + "px";
     }
 });
 
 legendHeader.addEventListener("pointerup", (e) => {
     if (window.innerWidth > 600) {
-        isDragging = false;
-        legendHeader.releasePointerCapture(e.pointerId);
+        isDragging = false; legendHeader.releasePointerCapture(e.pointerId);
         if (!isMoved) legendEl.classList.toggle('collapsed');
     }
 });
-
-// На мобильных - просто клик
-legendHeader.addEventListener('click', () => {
-    if(window.innerWidth <= 600) legendEl.classList.toggle('collapsed');
-});
+legendHeader.addEventListener('click', () => { if(window.innerWidth <= 600) legendEl.classList.toggle('collapsed'); });
 
 function updateLegend() {
     const container = d3.select("#legend-items");
@@ -310,7 +481,7 @@ function updateLegend() {
         const mixedItem = container.append("div").attr("class", "legend-item").style("margin-top", "8px");
         mixedItem.append("div").attr("class", "legend-pattern");
         mixedItem.append("div").style("font-style", "italic").style("font-size", "11px").text("Штриховка: Несколько метрополий");
-    } else {
+    } else if (currentMode === "subregions") {
         Object.entries(subregionColors).forEach(([region, color]) => {
             const item = container.append("div").attr("class", "legend-item");
             item.append("div").attr("class", "legend-color").style("background-color", color);
@@ -327,8 +498,7 @@ const projection = d3.geoMercator();
 const path = d3.geoPath().projection(projection);
 const tooltip = d3.select("#tooltip");
 
-// Рамки и масштабирование
-const zoom = d3.zoom().scaleExtent([1, 8]).on("zoom", function(event) {
+const zoom = d3.zoom().scaleExtent([1, 10]).on("zoom", function(event) {
     mapGroup.attr("transform", event.transform);
     mapGroup.selectAll(".country").style("stroke-width", 0.5 / event.transform.k + "px");
     mapGroup.selectAll(".island-marker").style("stroke-width", 1 / event.transform.k + "px");
@@ -339,40 +509,51 @@ svg.call(zoom);
 
 function resizeMap() {
     const navHeight = document.getElementById('top-nav').offsetHeight;
-    const w = window.innerWidth;
-    const h = window.innerHeight - navHeight;
+    const w = window.innerWidth; const h = window.innerHeight - navHeight;
     svg.attr("width", w).attr("height", h);
-    zoom.translateExtent([[0, 0], [w, h]]); // Жесткая рамка по краям
+    zoom.translateExtent([[0, 0], [w, h]]); 
 }
 window.addEventListener('resize', resizeMap);
 resizeMap();
 
 function getFillStyle(dataObj, id) {
-    if (currentMode === "subregions") {
-        return subregionColors[dataObj.subregion] || "#ececec";
-    } else {
-        const metros = dataObj.metro;
-        if (metros.length === 1) return metropoleColors[metros[0]] || "#ececec";
-        
-        const patternId = "pattern-" + id;
-        if (defs.select(`#${patternId}`).empty()) {
-            const pattern = defs.append("pattern").attr("id", patternId).attr("patternUnits", "userSpaceOnUse")
-                .attr("width", metros.length * 6).attr("height", metros.length * 6).attr("patternTransform", "rotate(45)");
-            metros.forEach((metro, index) => {
-                pattern.append("rect").attr("x", index * 6).attr("y", 0).attr("width", 6).attr("height", metros.length * 6)
-                    .attr("fill", metropoleColors[metro] || "#ececec");
-            });
+    // Режим ТЕСТА
+    if (currentMode === "quiz") {
+        if (quizPhase === 'result' || (quizPhase === 'answer' && id === currentTargetId)) {
+            // Если ответ уже дан или страна найдена, закрашиваем ее реальным цветом
+            return getIndependenceColor(dataObj, id);
         }
-        return `url(#pattern-${id})`;
+        return "#ececec"; // Иначе всё серое, чтобы не было подсказок
     }
+    
+    // Режимы Карты
+    if (currentMode === "subregions") return subregionColors[dataObj.subregion] || "#ececec";
+    return getIndependenceColor(dataObj, id);
 }
 
-function showTooltip(event, info) {
-    tooltip.transition().duration(200).style("opacity", 1);
+// Вынесена логика штриховки для удобства
+function getIndependenceColor(dataObj, id) {
+    const metros = dataObj.metro;
+    if (metros.length === 1) return metropoleColors[metros[0]] || "#ececec";
     
-    // Используем pageX и pageY для поддержки и мыши, и мобильных тапов
-    let xPos = event.pageX + 15;
-    let yPos = event.pageY - 28;
+    const patternId = "pattern-" + id;
+    if (defs.select(`#${patternId}`).empty()) {
+        const pattern = defs.append("pattern").attr("id", patternId).attr("patternUnits", "userSpaceOnUse")
+            .attr("width", metros.length * 6).attr("height", metros.length * 6).attr("patternTransform", "rotate(45)");
+        metros.forEach((metro, index) => {
+            pattern.append("rect").attr("x", index * 6).attr("y", 0).attr("width", 6).attr("height", metros.length * 6)
+                .attr("fill", metropoleColors[metro] || "#ececec");
+        });
+    }
+    return `url(#pattern-${id})`;
+}
+
+
+function showTooltip(event, info) {
+    if (currentMode === "quiz") return; // В режиме теста тултипы отключены!
+    
+    tooltip.transition().duration(200).style("opacity", 1);
+    let xPos = event.pageX + 15; let yPos = event.pageY - 28;
     if (xPos + 260 > window.innerWidth) xPos = window.innerWidth - 270;
     
     let tooltipHtml = `<div class="tooltip-title">${info.name}</div><div class="tooltip-row"><b>Субрегион:</b> ${info.subregion}</div>`;
@@ -382,7 +563,6 @@ function showTooltip(event, info) {
     } else {
         tooltipHtml += `<div class="tooltip-row"><b>Столица:</b> ${info.capital}</div>`;
     }
-    
     tooltip.html(tooltipHtml).style("left", Math.max(10, xPos) + "px").style("top", Math.max(10, yPos) + "px");
 }
 
@@ -408,19 +588,50 @@ let geojsonData = [];
 
 function updateMapVisuals() {
     updateLegend();
-    mapGroup.selectAll(".country").attr("fill", d => getFillStyle(countryData[resolveGeoId(d.properties)], resolveGeoId(d.properties)));
+    
+    mapGroup.selectAll(".country")
+        .attr("fill", d => {
+            const geoId = resolveGeoId(d.properties);
+            return countryData[geoId] ? getFillStyle(countryData[geoId], geoId) : "#ececec";
+        })
+        .style("stroke-width", d => {
+            // Подсветка найденной страны в тесте
+            const geoId = resolveGeoId(d.properties);
+            return (currentMode === 'quiz' && geoId === currentTargetId && quizPhase !== 'find') ? "2px" : "0.5px";
+        })
+        .style("stroke", d => {
+            const geoId = resolveGeoId(d.properties);
+            return (currentMode === 'quiz' && geoId === currentTargetId && quizPhase !== 'find') ? "#e74c3c" : "#333";
+        });
+
     mapGroup.selectAll(".island-marker").attr("fill", d => getFillStyle(d.info, d.id));
-    mapGroup.selectAll(".map-label").text(d => currentMode === "independence" ? countryData[resolveGeoId(d.properties)].year.split('/')[0].split(' ')[0] : "");
-    mapGroup.selectAll(".island-label").text(d => currentMode === "independence" ? d.info.year.split('/')[0].split(' ')[0] : "");
+    
+    // Скрытие надписей в режиме теста
+    mapGroup.selectAll(".map-label").text(d => {
+        if (currentMode === "quiz") return "";
+        const geoId = resolveGeoId(d.properties);
+        if (!countryData[geoId]) return "";
+        return currentMode === "independence" ? countryData[geoId].year.split('/')[0].split(' ')[0] : "";
+    });
+    mapGroup.selectAll(".island-label").text(d => (currentMode === "independence" && currentMode !== "quiz") ? d.info.year.split('/')[0].split(' ')[0] : "");
 }
 
 d3.json("ne_110m_admin_0_countries.geojson?v=2").then(world => {
     geojsonData = world.features.filter(d => resolveGeoId(d.properties) !== null);
     projection.fitExtent([[30, 30], [window.innerWidth - 30, window.innerHeight - document.getElementById('top-nav').offsetHeight - 30]], {type: "FeatureCollection", features: geojsonData});
 
-    // Обработчик touchstart удален
     mapGroup.selectAll("path").data(geojsonData).enter().append("path").attr("d", path).attr("class", "country")
-        .on("click", (event, d) => { event.stopPropagation(); showTooltip(event, countryData[resolveGeoId(d.properties)]); });
+        .on("click", (event, d) => { 
+            event.stopPropagation(); 
+            const geoId = resolveGeoId(d.properties);
+            if (!geoId || !countryData[geoId]) return;
+            
+            if (currentMode === 'quiz') {
+                handleQuizMapClick(geoId);
+            } else {
+                showTooltip(event, countryData[geoId]); 
+            }
+        });
 
     mapGroup.selectAll(".map-label").data(geojsonData).enter().append("text").attr("class", "map-label").attr("transform", d => {
             const centroid = path.centroid(d);
@@ -430,9 +641,15 @@ d3.json("ne_110m_admin_0_countries.geojson?v=2").then(world => {
     const islands = mapGroup.selectAll(".island-group").data(islandNations).enter().append("g")
         .attr("transform", d => `translate(${projection(d.coords)[0]}, ${projection(d.coords)[1]})`);
 
-    // Обработчик touchstart удален
     islands.append("circle").attr("class", "island-marker").attr("r", 5)
-        .on("click", (event, d) => { event.stopPropagation(); showTooltip(event, d.info); });
+        .on("click", (event, d) => { 
+            event.stopPropagation(); 
+            if (currentMode === 'quiz') {
+                handleQuizMapClick(d.id);
+            } else {
+                showTooltip(event, d.info); 
+            }
+        });
 
     islands.append("text").attr("class", "island-label").attr("dx", 8).attr("dy", 3);
 
