@@ -5,36 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Латинская Америка | Исторический атлас</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-color: #fcfbf9;
-            --nav-bg: #ffffff;
-            --text-main: #2c3e50;
-            --border-color: #e2dfd6;
+            --bg-color: #fcfbf9; --nav-bg: #ffffff;
+            --text-main: #2c3e50; --border-color: #e2dfd6;
+            --quiz-primary: #3498db; --quiz-success: #2ecc71; --quiz-danger: #e74c3c;
         }
 
         body { 
-            margin: 0; padding: 0; 
-            background-color: var(--bg-color); 
-            font-family: 'Inter', sans-serif; 
-            overflow: hidden; 
-            touch-action: none;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            margin: 0; padding: 0; background-color: var(--bg-color); 
+            font-family: 'Inter', sans-serif; overflow: hidden; 
+            touch-action: none; display: flex; flex-direction: column; height: 100vh;
         }
 
         #top-nav {
-            background-color: var(--nav-bg);
-            border-bottom: 1px solid var(--border-color);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            z-index: 20;
+            background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 20;
         }
 
         .back-btn {
@@ -53,10 +42,11 @@
             font-size: 13px; cursor: pointer; color: #5c6b7a; transition: all 0.2s;
         }
         .mode-btn.active { background: var(--text-main); color: white; font-weight: 500; }
+        .mode-btn.quiz-mode-btn.active { background: var(--quiz-primary); }
 
         #map-container { flex-grow: 1; width: 100vw; display: block; background-color: #eaf6f6; }
         
-        .country { stroke: #333; stroke-width: 0.5px; transition: opacity 0.2s, fill 0.3s; cursor: pointer; }
+        .country { stroke: #333; stroke-width: 0.5px; transition: opacity 0.2s, fill 0.3s, stroke-width 0.2s; cursor: pointer; }
         .country:hover { opacity: 0.7; }
         .island-marker { stroke: #111; stroke-width: 0.8px; cursor: pointer; transition: opacity 0.2s, fill 0.3s; }
         .island-marker:hover { opacity: 0.7; }
@@ -79,7 +69,6 @@
             border-radius: 6px; font-size: 12px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
             z-index: 5; width: 220px;
         }
-        
         #legend-header {
             font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px;
             text-align: center; background: var(--nav-bg);
@@ -88,21 +77,42 @@
             cursor: grab; touch-action: none;
         }
         #legend-header:active { cursor: grabbing; }
-        
         #legend-content { padding: 10px; max-height: 40vh; overflow-y: auto; transition: max-height 0.3s; }
         .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
         .legend-color { width: 14px; height: 14px; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; flex-shrink: 0; }
         .legend-pattern { width: 14px; height: 14px; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; flex-shrink: 0; background: repeating-linear-gradient(45deg, #ccc, #ccc 3px, #fff 3px, #fff 6px); }
-
         #legend.collapsed #legend-content { max-height: 0; padding: 0 10px; overflow: hidden; border: none; }
-        .toggle-icon { transition: transform 0.3s; }
-        #legend.collapsed .toggle-icon { transform: rotate(180deg); }
+
+        /* ПАНЕЛЬ ТЕСТИРОВАНИЯ */
+        #quiz-panel {
+            position: absolute; top: 70px; right: 20px; background: rgba(255, 255, 255, 0.98);
+            border: 2px solid var(--quiz-primary); border-radius: 8px; padding: 15px; width: 300px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 15; display: none;
+            max-height: 80vh; overflow-y: auto; font-size: 14px;
+        }
+        #quiz-header { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 18px; color: var(--quiz-primary); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .quiz-title { font-weight: 600; font-size: 16px; margin-bottom: 10px; }
+        .quiz-error { color: var(--quiz-danger); font-size: 12px; margin-bottom: 10px; font-weight: 500; min-height: 15px; }
+        .quiz-form-group { margin-bottom: 12px; }
+        .quiz-label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: 500; }
+        .quiz-input, .quiz-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: 'Inter', sans-serif; box-sizing: border-box; }
+        .quiz-metro-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 5px; }
+        .quiz-metro-item span { font-size: 13px; font-weight: 500; }
+        .quiz-metro-year { width: 70px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .quiz-remove-btn { background: none; border: none; color: var(--quiz-danger); cursor: pointer; font-size: 16px; font-weight: bold; padding: 0 5px; }
+        .quiz-btn { width: 100%; padding: 10px; margin-top: 10px; background: var(--quiz-primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        .quiz-btn:hover { background: #2980b9; }
+        .quiz-btn-next { background: var(--quiz-success); }
+        .quiz-btn-next:hover { background: #27ae60; }
+        .quiz-result-box { padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 13px; display: none; }
+        .quiz-result-box.correct { background-color: #e8f8f5; border: 1px solid #2ecc71; color: #27ae60; }
+        .quiz-result-box.incorrect { background-color: #fdedec; border: 1px solid #e74c3c; color: #c0392b; }
 
         @media (max-width: 600px) {
             #top-nav { padding: 8px 10px; flex-direction: column; gap: 10px; }
             .mode-btn { padding: 6px 12px; font-size: 12px; }
             #legend { bottom: 0; left: 0 !important; top: auto !important; width: 100%; border-radius: 12px 12px 0 0; border-left: none; border-right: none; border-bottom: none; }
-            #legend-header { border-radius: 12px 12px 0 0; padding: 12px; }
+            #quiz-panel { top: auto; bottom: 0; right: 0; width: 100%; border-radius: 12px 12px 0 0; border-left: none; border-right: none; border-bottom: none; box-sizing: border-box; }
         }
     </style>
 </head>
@@ -113,6 +123,7 @@
     <div class="mode-selector">
         <button class="mode-btn active" data-mode="independence">Независимость</button>
         <button class="mode-btn" data-mode="subregions">Субрегионы</button>
+        <button class="mode-btn quiz-mode-btn" data-mode="quiz">Тест</button>
     </div>
 </nav>
 
@@ -123,6 +134,33 @@
     <div id="legend-content"><div id="legend-items"></div></div>
 </div>
 
+<div id="quiz-panel">
+    <div id="quiz-header">Режим тестирования</div>
+    <div id="quiz-find-section">
+        <div class="quiz-title">Где находится: <br><span id="quiz-target-name" style="color: var(--quiz-primary); font-size: 20px;"></span>?</div>
+        <div class="quiz-error" id="quiz-error-msg"></div>
+        <div style="font-size: 12px; color: #7f8c8d;">Нажмите на нужную страну (территорию) на карте.</div>
+    </div>
+
+    <div id="quiz-answer-section" style="display: none;">
+        <div class="quiz-title">Данные: <span id="quiz-active-name" style="color: var(--quiz-primary);"></span></div>
+        <div class="quiz-form-group">
+            <label class="quiz-label">Год независимости (или 'Завис.'):</label>
+            <input type="text" id="quiz-year-input" class="quiz-input" placeholder="Например: 1821">
+        </div>
+        <div class="quiz-form-group">
+            <label class="quiz-label">Бывшие метрополии:</label>
+            <div id="quiz-selected-metros"></div>
+            <select id="quiz-metro-select" class="quiz-select" style="margin-top: 5px;">
+                <option value="">+ Добавить метрополию...</option>
+            </select>
+        </div>
+        <button id="quiz-check-btn" class="quiz-btn">Проверить</button>
+        <div id="quiz-result" class="quiz-result-box"></div>
+        <button id="quiz-next-btn" class="quiz-btn quiz-btn-next" style="display: none;">Следующая территория</button>
+    </div>
+</div>
+
 <svg id="map-container"></svg>
 
 <script>
@@ -131,7 +169,7 @@ const metropoleColors = {
     "Испания": "#f5d142", "Великобритания": "#f54242", "Португалия": "#42f563",
     "Франция": "#4287f5", "Нидерланды": "#42d4f5", "США": "#ff99cc",
     "Дания": "#ffd700", "Колумбия": "#e1b12c", "Бразилия": "#4cd137", "Гаити": "#9c88ff",
-    "Швеция": "#a1caf1", "Аргентина": "#74b9ff"
+    "Швеция": "#a1caf1", "Аргентина": "#74b9ff", "Мальтийский орден": "#e84393"
 };
 
 const subregionColors = {
@@ -140,6 +178,7 @@ const subregionColors = {
     "Андские страны": "#ff7979", "Ла-Платские страны": "#6a89cc"
 };
 
+// Полная база данных Латинской Америки
 const countryData = {
     "MEX": { name: "Мексика", capital: "Мехико", metro: ["Испания"], metro_text: "Испания (до 1821)", year: "1821", subregion: "Мексика" },
     "GTM": { name: "Гватемала", capital: "Гватемала", metro: ["Испания"], metro_text: "Испания (до 1821)", year: "1821", subregion: "Центральная Америка" },
@@ -171,12 +210,12 @@ const countryData = {
     "URY": { name: "Уругвай", capital: "Монтевидео", metro: ["Испания", "Португалия", "Бразилия"], metro_text: "Испания (до 1814), Португалия (до 1822), Бразилия (до 1825)", year: "1825", subregion: "Ла-Платские страны" },
     
     "GUF": { name: "Гвиана (Фр.)", capital: "Кайенна", metro: ["Франция"], metro_text: "Франция (с 1604 по н.в.)", year: "Завис.", subregion: "Гуаяна" },
-    "FLK": { name: "Фолклендские (Мальвинские) Острова", capital: "Стэнли", metro: ["Франция", "Испания", "Аргентина", "Великобритания"], metro_text: "Франция (до 1767), Испания (до 1811), Аргентина (до 1833), Великобритания (с 1833 по н.в.)", year: "Завис.", subregion: "Ла-Платские страны" },
+    "FLK": { name: "Фолклендские Острова", capital: "Стэнли", metro: ["Франция", "Испания", "Аргентина", "Великобритания"], metro_text: "Франция (до 1767), Испания (до 1811), Аргентина (до 1833), Великобритания (с 1833 по н.в.)", year: "Завис.", subregion: "Ла-Платские страны" },
     "PRI": { name: "Пуэрто-Рико", capital: "Сан-Хуан", metro: ["Испания", "США"], metro_text: "Испания (до 1898), США (с 1898 по н.в.)", year: "Завис.", subregion: "Вест-Индия" }
 };
 
 const islandNations = [
-    { id: "ATG", coords: [-61.8, 17.0], info: { name: "Антигуа и Барбуда", capital: "Сент-Джонс", metro: ["Испания", "Великобритания"], metro_text: "Испания (до 1632), Великобритания (до 1981)", year: "1981", subregion: "Вест-Индия" } },
+    { id: "ATG", coords: [-61.8, 17.0], info: { name: "Антигуа и Барбуда", capital: "Сент-Джонс", metro: ["Испания", "Велибритания"], metro_text: "Испания (до 1632), Великобритания (до 1981)", year: "1981", subregion: "Вест-Индия" } },
     { id: "BHS", coords: [-77.3, 25.0], info: { name: "Багамские Острова", capital: "Нассау", metro: ["Испания", "Великобритания"], metro_text: "Испания (до 1648), Великобритания (до 1973)", year: "1973", subregion: "Вест-Индия" } },
     { id: "BRB", coords: [-59.5, 13.1], info: { name: "Барбадос", capital: "Бриджтаун", metro: ["Великобритания"], metro_text: "Великобритания (до 1966)", year: "1966", subregion: "Вест-Индия" } },
     { id: "GRD", coords: [-61.6, 12.1], info: { name: "Гренада", capital: "Сент-Джорджес", metro: ["Франция", "Великобритания"], metro_text: "Франция (до 1762), Великобритания (до 1974)", year: "1974", subregion: "Вест-Индия" } },
@@ -204,36 +243,163 @@ const islandNations = [
 
 let currentMode = "independence";
 
-// --- ЛОГИКА ЛЕГЕНДЫ И КНОПОК ---
-const legendHeader = document.getElementById('legend-header');
-const legendEl = document.getElementById('legend');
-const modeBtns = document.querySelectorAll('.mode-btn');
+// --- ЛОГИКА ТЕСТИРОВАНИЯ (QUIZ) ---
+let quizCountriesList = [];
+let currentQuizIndex = 0;
+let quizPhase = "off";
+let currentQuizTargetId = null;
+let selectedMetros = {};
 
+const quizPanel = document.getElementById('quiz-panel');
+const legendEl = document.getElementById('legend');
+const metroSelect = document.getElementById('quiz-metro-select');
+
+Object.keys(metropoleColors).forEach(metro => {
+    let opt = document.createElement('option');
+    opt.value = metro; opt.textContent = metro;
+    metroSelect.appendChild(opt);
+});
+
+metroSelect.addEventListener('change', function() {
+    const val = this.value;
+    if (val && !selectedMetros[val]) { selectedMetros[val] = ""; renderSelectedMetros(); }
+    this.value = ""; 
+});
+
+function renderSelectedMetros() {
+    const container = document.getElementById('quiz-selected-metros');
+    container.innerHTML = "";
+    Object.keys(selectedMetros).forEach(metro => {
+        const row = document.createElement('div');
+        row.className = "quiz-metro-item";
+        row.innerHTML = `<span>${metro}</span><div><span style="font-size: 11px;">до: </span>
+                <input type="text" class="quiz-metro-year" data-metro="${metro}" placeholder="Год/н.в." value="${selectedMetros[metro]}">
+                <button class="quiz-remove-btn" onclick="removeMetro('${metro}')">×</button></div>`;
+        container.appendChild(row);
+    });
+    document.querySelectorAll('.quiz-metro-year').forEach(input => {
+        input.addEventListener('input', (e) => { selectedMetros[e.target.dataset.metro] = e.target.value; });
+    });
+}
+
+window.removeMetro = function(metro) { delete selectedMetros[metro]; renderSelectedMetros(); }
+
+function startQuiz() {
+    const allIds = [...Object.keys(countryData), ...islandNations.map(i => i.id)];
+    quizCountriesList = allIds.sort(() => Math.random() - 0.5); 
+    currentQuizIndex = 0;
+    legendEl.style.display = 'none';
+    quizPanel.style.display = 'block';
+    nextQuizQuestion();
+}
+
+function getCountryNameById(id) {
+    if (countryData[id]) return countryData[id].name;
+    let island = islandNations.find(i => i.id === id);
+    if (island) return island.info.name;
+    return "";
+}
+
+function nextQuizQuestion() {
+    if (currentQuizIndex >= quizCountriesList.length) {
+        document.getElementById('quiz-find-section').innerHTML = "<div class='quiz-title'>Тест завершен! Вы прошли все территории.</div>";
+        document.getElementById('quiz-answer-section').style.display = 'none';
+        return;
+    }
+    currentTargetId = quizCountriesList[currentQuizIndex];
+    quizPhase = 'find'; selectedMetros = {};
+    document.getElementById('quiz-target-name').textContent = getCountryNameById(currentTargetId);
+    document.getElementById('quiz-error-msg').textContent = "";
+    document.getElementById('quiz-find-section').style.display = 'block';
+    document.getElementById('quiz-answer-section').style.display = 'none';
+    document.getElementById('quiz-result').style.display = 'none';
+    document.getElementById('quiz-next-btn').style.display = 'none';
+    document.getElementById('quiz-check-btn').style.display = 'block';
+    document.getElementById('quiz-year-input').value = "";
+    renderSelectedMetros(); updateMapVisuals();
+}
+
+function handleQuizMapClick(geoId) {
+    if (quizPhase !== 'find') return;
+    if (geoId === currentTargetId) {
+        quizPhase = 'answer';
+        document.getElementById('quiz-find-section').style.display = 'none';
+        document.getElementById('quiz-active-name').textContent = getCountryNameById(currentTargetId);
+        document.getElementById('quiz-answer-section').style.display = 'block';
+        updateMapVisuals(); 
+    } else {
+        const clickedName = getCountryNameById(geoId) || "Неизвестная территория";
+        document.getElementById('quiz-error-msg').textContent = `Неверно! Это ${clickedName}. Ищите ${getCountryNameById(currentTargetId)}!`;
+    }
+}
+
+document.getElementById('quiz-check-btn').addEventListener('click', () => {
+    const targetData = countryData[currentTargetId] || islandNations.find(i => i.id === currentTargetId).info;
+    const inputYear = document.getElementById('quiz-year-input').value.trim();
+    let errors = [];
+    
+    // Проверка года независимости
+    if (!targetData.year.includes(inputYear) || inputYear === "") {
+        errors.push(`<b>Год независимости:</b> неверно. Правильно: ${targetData.year}`);
+    }
+    
+    const targetMetros = targetData.metro;
+    const selectedMetroKeys = Object.keys(selectedMetros);
+    let missingMetros = targetMetros.filter(m => !selectedMetroKeys.includes(m));
+    let extraMetros = selectedMetroKeys.filter(m => !targetMetros.includes(m));
+    
+    if (missingMetros.length > 0) errors.push(`<b>Пропущены метрополии:</b> ${missingMetros.join(', ')}`);
+    if (extraMetros.length > 0) errors.push(`<b>Лишние метрополии:</b> ${extraMetros.join(', ')}`);
+    
+    selectedMetroKeys.forEach(m => {
+        if (targetMetros.includes(m)) {
+            const inputDate = selectedMetros[m].trim();
+            // Поиск совпадения подстроки внутри текста исторической справки
+            if (inputDate !== "" && !targetData.metro_text.includes(inputDate)) {
+                 errors.push(`<b>Дата для ${m}:</b> неверно.`);
+            } else if (inputDate === "") errors.push(`<b>Укажите год для ${m}</b>`);
+        }
+    });
+
+    const resultBox = document.getElementById('quiz-result');
+    resultBox.style.display = 'block';
+    if (errors.length === 0) {
+        resultBox.className = "quiz-result-box correct";
+        resultBox.innerHTML = `<strong>Идеально!</strong><br>Полная справка: ${targetData.metro_text}`;
+    } else {
+        resultBox.className = "quiz-result-box incorrect";
+        resultBox.innerHTML = `<strong>Есть ошибки:</strong><br>${errors.join('<br>')}<br><br><em>Справка: ${targetData.metro_text}</em>`;
+    }
+    
+    document.getElementById('quiz-check-btn').style.display = 'none';
+    document.getElementById('quiz-next-btn').style.display = 'block';
+    quizPhase = 'result'; updateMapVisuals(); 
+});
+
+document.getElementById('quiz-next-btn').addEventListener('click', () => { currentQuizIndex++; nextQuizQuestion(); });
+
+// --- ОБЩАЯ ЛОГИКА ---
+const modeBtns = document.querySelectorAll('.mode-btn');
 modeBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-        modeBtns.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
+        modeBtns.forEach(b => b.classList.remove('active')); e.target.classList.add('active');
         currentMode = e.target.dataset.mode;
-        updateMapVisuals();
+        if (currentMode === 'quiz') startQuiz();
+        else { quizPhase = 'off'; quizPanel.style.display = 'none'; legendEl.style.display = 'block'; updateMapVisuals(); }
     });
 });
 
+const legendHeader = document.getElementById('legend-header');
 let isDragging = false; let isMoved = false; let startX, startY, initialLeft, initialTop;
-
 legendHeader.addEventListener("pointerdown", (e) => {
     if (window.innerWidth <= 600) return; 
-    isDragging = true; isMoved = false; 
-    startX = e.clientX; startY = e.clientY;
-    const rect = legendEl.getBoundingClientRect();
-    legendEl.style.bottom = "auto"; legendEl.style.right = "auto";
-    initialLeft = rect.left; initialTop = rect.top;
-    legendEl.style.left = initialLeft + "px"; legendEl.style.top = initialTop + "px";
+    isDragging = true; isMoved = false; startX = e.clientX; startY = e.clientY;
+    const rect = legendEl.getBoundingClientRect(); legendEl.style.bottom = "auto"; legendEl.style.right = "auto";
+    initialLeft = rect.left; initialTop = rect.top; legendEl.style.left = initialLeft + "px"; legendEl.style.top = initialTop + "px";
     legendHeader.setPointerCapture(e.pointerId);
 });
-
 legendHeader.addEventListener("pointermove", (e) => {
-    if (!isDragging) return;
-    const dx = e.clientX - startX; const dy = e.clientY - startY;
+    if (!isDragging) return; const dx = e.clientX - startX; const dy = e.clientY - startY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isMoved = true;
     if (isMoved) {
         let newX = Math.max(0, Math.min(window.innerWidth - legendEl.offsetWidth, initialLeft + dx));
@@ -241,33 +407,24 @@ legendHeader.addEventListener("pointermove", (e) => {
         legendEl.style.left = newX + "px"; legendEl.style.top = newY + "px";
     }
 });
-
 legendHeader.addEventListener("pointerup", (e) => {
-    if (window.innerWidth > 600) {
-        isDragging = false; legendHeader.releasePointerCapture(e.pointerId);
-        if (!isMoved) legendEl.classList.toggle('collapsed');
-    }
+    if (window.innerWidth > 600) { isDragging = false; legendHeader.releasePointerCapture(e.pointerId); if (!isMoved) legendEl.classList.toggle('collapsed'); }
 });
-
 legendHeader.addEventListener('click', () => { if(window.innerWidth <= 600) legendEl.classList.toggle('collapsed'); });
 
 function updateLegend() {
-    const container = d3.select("#legend-items");
-    container.html("");
+    const container = d3.select("#legend-items"); container.html("");
     if (currentMode === "independence") {
         Object.entries(metropoleColors).forEach(([metro, color]) => {
             const item = container.append("div").attr("class", "legend-item");
-            item.append("div").attr("class", "legend-color").style("background-color", color);
-            item.append("div").text(metro);
+            item.append("div").attr("class", "legend-color").style("background-color", color); item.append("div").text(metro);
         });
         const mixedItem = container.append("div").attr("class", "legend-item").style("margin-top", "8px");
-        mixedItem.append("div").attr("class", "legend-pattern");
-        mixedItem.append("div").style("font-style", "italic").style("font-size", "11px").text("Штриховка: Несколько метрополий");
-    } else {
+        mixedItem.append("div").attr("class", "legend-pattern"); mixedItem.append("div").style("font-style", "italic").style("font-size", "11px").text("Штриховка: Несколько метрополий");
+    } else if (currentMode === "subregions") {
         Object.entries(subregionColors).forEach(([region, color]) => {
             const item = container.append("div").attr("class", "legend-item");
-            item.append("div").attr("class", "legend-color").style("background-color", color);
-            item.append("div").text(region);
+            item.append("div").attr("class", "legend-color").style("background-color", color); item.append("div").text(region);
         });
     }
 }
@@ -280,6 +437,7 @@ const projection = d3.geoMercator();
 const path = d3.geoPath().projection(projection);
 const tooltip = d3.select("#tooltip");
 
+// Зум и динамическое скрытие текста для островов (от каши)
 const zoom = d3.zoom().scaleExtent([1, 15]).on("zoom", function(event) {
     const k = event.transform.k;
     mapGroup.attr("transform", event.transform);
@@ -289,6 +447,7 @@ const zoom = d3.zoom().scaleExtent([1, 15]).on("zoom", function(event) {
         .attr("r", 3 / Math.max(1, k * 0.4))
         .style("stroke-width", 0.8 / k + "px");
 
+    // Подписи появляются только при зуме
     mapGroup.selectAll(".island-label")
         .style("font-size", (8 / Math.max(1, k * 0.5)) + "px")
         .style("opacity", k > 3.5 ? 1 : 0);
@@ -303,59 +462,52 @@ svg.call(zoom);
 function resizeMap() {
     const navHeight = document.getElementById('top-nav').offsetHeight;
     const w = window.innerWidth; const h = window.innerHeight - navHeight;
-    svg.attr("width", w).attr("height", h);
-    zoom.translateExtent([[0, 0], [w, h]]); 
+    svg.attr("width", w).attr("height", h); zoom.translateExtent([[0, 0], [w, h]]); 
 }
-window.addEventListener('resize', resizeMap);
-resizeMap();
+window.addEventListener('resize', resizeMap); resizeMap();
 
-function getFillStyle(dataObj, id) {
-    if (currentMode === "subregions") return subregionColors[dataObj.subregion] || "#ececec";
+function getIndependenceColor(dataObj, id) {
     const metros = dataObj.metro;
     if (metros.length === 1) return metropoleColors[metros[0]] || "#ececec";
-    
     const patternId = "pattern-" + id;
     if (defs.select(`#${patternId}`).empty()) {
-        const pattern = defs.append("pattern").attr("id", patternId).attr("patternUnits", "userSpaceOnUse")
-            .attr("width", metros.length * 6).attr("height", metros.length * 6).attr("patternTransform", "rotate(45)");
-        metros.forEach((metro, index) => {
-            pattern.append("rect").attr("x", index * 6).attr("y", 0).attr("width", 6).attr("height", metros.length * 6)
-                .attr("fill", metropoleColors[metro] || "#ececec");
-        });
+        const pattern = defs.append("pattern").attr("id", patternId).attr("patternUnits", "userSpaceOnUse").attr("width", metros.length * 6).attr("height", metros.length * 6).attr("patternTransform", "rotate(45)");
+        metros.forEach((metro, index) => { pattern.append("rect").attr("x", index * 6).attr("y", 0).attr("width", 6).attr("height", metros.length * 6).attr("fill", metropoleColors[metro] || "#ececec"); });
     }
     return `url(#pattern-${id})`;
 }
 
+function getFillStyle(dataObj, id) {
+    if (currentMode === "quiz") return (quizPhase === 'result' || (quizPhase === 'answer' && id === currentTargetId)) ? getIndependenceColor(dataObj, id) : "#ececec";
+    if (currentMode === "subregions") return subregionColors[dataObj.subregion] || "#ececec";
+    return getIndependenceColor(dataObj, id);
+}
+
 function showTooltip(event, info) {
+    if (currentMode === "quiz") return; 
     tooltip.transition().duration(200).style("opacity", 1);
-    
-    // Используем pageX и pageY (они есть и на мыши, и эмулируются на мобильных кликах)
-    let xPos = event.pageX + 15; 
-    let yPos = event.pageY - 28;
+    let xPos = event.pageX + 15; let yPos = event.pageY - 28;
     if (xPos + 290 > window.innerWidth) xPos = window.innerWidth - 300;
     
     let tooltipHtml = `<div class="tooltip-title">${info.name}</div><div class="tooltip-row"><b>Субрегион:</b> ${info.subregion}</div>`;
     if (currentMode === "independence") {
-        tooltipHtml += `<div class="tooltip-row"><b>Год обретения независимости:</b> ${info.year}</div>
-                        <div class="tooltip-row"><b>Метрополии:</b> ${info.metro_text}</div>`;
-    } else {
-        tooltipHtml += `<div class="tooltip-row"><b>Столица (Административный центр):</b> ${info.capital}</div>`;
-    }
-    
+        tooltipHtml += `<div class="tooltip-row"><b>Год обретения:</b> ${info.year}</div><div class="tooltip-row"><b>Метрополии:</b> ${info.metro_text}</div>`;
+    } else tooltipHtml += `<div class="tooltip-row"><b>Столица / Адм. центр:</b> ${info.capital}</div>`;
     tooltip.html(tooltipHtml).style("left", Math.max(10, xPos) + "px").style("top", Math.max(10, yPos) + "px");
 }
 
 function hideTooltip() { tooltip.transition().duration(200).style("opacity", 0); }
-svg.on("click", hideTooltip); 
+svg.on("click", hideTooltip);
 
-function resolveGeoId(properties) {
-    const idCandidates = [properties.ADM0_A3, properties.ISO_A3, properties.GU_A3, properties.SU_A3];
+function resolveGeoId(d) {
+    const prop = d.properties || {};
+    const idCandidates = [d.id, prop.ADM0_A3, prop.ISO_A3, prop.GU_A3, prop.SU_A3];
     for (let id of idCandidates) {
         if (!id || id === "-99") continue;
         if (countryData[id]) return id;
-        if (id === "FRA") return "GUF"; 
+        if (id === "FRA") return "GUF"; // Хак для Фр. Гвианы
     }
-    const name = properties.NAME || properties.ADMIN;
+    const name = prop.NAME || prop.ADMIN || prop.name;
     if (name === "Dominican Republic") return "DOM";
     if (name === "Falkland Islands") return "FLK";
     if (name === "France") return "GUF"; 
@@ -367,36 +519,37 @@ let geojsonData = [];
 function updateMapVisuals() {
     updateLegend();
     mapGroup.selectAll(".country").attr("fill", d => {
-        const geoId = resolveGeoId(d.properties);
+        const geoId = resolveGeoId(d);
         return countryData[geoId] ? getFillStyle(countryData[geoId], geoId) : "#ececec";
-    });
+    }).style("stroke-width", d => (currentMode === 'quiz' && resolveGeoId(d) === currentTargetId && quizPhase !== 'find') ? "2px" : "0.5px")
+      .style("stroke", d => (currentMode === 'quiz' && resolveGeoId(d) === currentTargetId && quizPhase !== 'find') ? "#e74c3c" : "#333");
+
     mapGroup.selectAll(".island-marker").attr("fill", d => getFillStyle(d.info, d.id));
-    
     mapGroup.selectAll(".map-label").text(d => {
-        const geoId = resolveGeoId(d.properties);
-        if (!countryData[geoId]) return "";
-        return currentMode === "independence" ? countryData[geoId].year.split('/')[0].split(' ')[0] : "";
+        if (currentMode === "quiz") return "";
+        const geoId = resolveGeoId(d);
+        return (countryData[geoId] && currentMode === "independence") ? countryData[geoId].year.split('/')[0].split(' ')[0] : "";
     });
-    mapGroup.selectAll(".island-label").text(d => currentMode === "independence" ? d.info.year.split('/')[0].split(' ')[0] : "");
+    mapGroup.selectAll(".island-label").text(d => (currentMode === "independence" && currentMode !== "quiz") ? d.info.year.split('/')[0].split(' ')[0] : "");
 }
 
-d3.json("ne_110m_admin_0_countries.geojson?v=2").then(world => {
-    geojsonData = world.features.filter(d => resolveGeoId(d.properties) !== null);
+// 100% НАДЕЖНАЯ ЗАГРУЗКА КАРТЫ: Сначала локально, если ошибка — качаем из интернета (CDN)
+const localUrl = "ne_110m_admin_0_countries.geojson";
+const cdnUrl = "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson";
+
+d3.json(localUrl).catch(() => d3.json(cdnUrl)).then(world => {
+    geojsonData = world.features.filter(d => resolveGeoId(d) !== null);
     
-    const latAmBbox = {
-        type: "FeatureCollection",
-        features: [
-            {type: "Feature", geometry: {type: "Point", coordinates: [-118, 32]}}, 
-            {type: "Feature", geometry: {type: "Point", coordinates: [-34, -56]}}  
-        ]
-    };
+    // Рамка только для Латинской Америки (чтобы Франция не сдвигала камеру)
+    const latAmBbox = { type: "FeatureCollection", features: [ {type: "Feature", geometry: {type: "Point", coordinates: [-118, 32]}}, {type: "Feature", geometry: {type: "Point", coordinates: [-34, -56]}} ] };
     projection.fitExtent([[30, 30], [window.innerWidth - 30, window.innerHeight - document.getElementById('top-nav').offsetHeight - 30]], latAmBbox);
 
-    // Удален обработчик touchstart, чтобы скролл и зум на мобильных работали корректно
     mapGroup.selectAll("path").data(geojsonData).enter().append("path").attr("d", path).attr("class", "country")
-        .on("click", (event, d) => {
-            const geoId = resolveGeoId(d.properties);
-            if(countryData[geoId]) { event.stopPropagation(); showTooltip(event, countryData[geoId]); }
+        .on("click", (event, d) => { 
+            event.stopPropagation(); 
+            const geoId = resolveGeoId(d);
+            if (!geoId || !countryData[geoId]) return;
+            if (currentMode === 'quiz') handleQuizMapClick(geoId); else showTooltip(event, countryData[geoId]); 
         });
 
     mapGroup.selectAll(".map-label").data(geojsonData).enter().append("text").attr("class", "map-label").attr("transform", d => {
@@ -407,13 +560,16 @@ d3.json("ne_110m_admin_0_countries.geojson?v=2").then(world => {
     const islands = mapGroup.selectAll(".island-group").data(islandNations).enter().append("g")
         .attr("transform", d => `translate(${projection(d.coords)[0]}, ${projection(d.coords)[1]})`);
 
-    // Тоже удален touchstart
     islands.append("circle").attr("class", "island-marker").attr("r", 3)
-        .on("click", (event, d) => { event.stopPropagation(); showTooltip(event, d.info); });
+        .on("click", (event, d) => { 
+            event.stopPropagation(); 
+            if (currentMode === 'quiz') handleQuizMapClick(d.id); else showTooltip(event, d.info); 
+        });
 
     islands.append("text").attr("class", "island-label").attr("dx", 6).attr("dy", 2);
-
     updateMapVisuals();
+}).catch(error => {
+    alert("Критическая ошибка: не удалось загрузить геоданные карты ни с вашего компьютера, ни из интернета. Проверьте соединение.");
 });
 </script>
 </body>
